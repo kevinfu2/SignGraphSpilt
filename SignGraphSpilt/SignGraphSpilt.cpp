@@ -31,10 +31,13 @@ cv::Point2f computeIntersect(cv::Vec4i a, cv::Vec4i b)
 }
 
 bool comparator(Point2f a, Point2f b) {
-	return a.x<b.x;
+	return a.x < b.x;
+}
+bool comparator2(vector<cv::Point2f> a, vector<cv::Point2f> b) {
+	return a.size() > b.size();
 }
 bool comparatory(Point2f a, Point2f b) {
-	return a.y<b.y;
+	return a.y < b.y;
 }
 void sortCorners(std::vector<cv::Point2f>& corners, cv::Point2f center)
 {
@@ -61,7 +64,7 @@ void sortCorners(std::vector<cv::Point2f>& corners, cv::Point2f center)
 
 cv::Mat debugSquares(std::vector<std::vector<cv::Point> > squares, cv::Mat image)
 {
-	for (int i = 0; i< squares.size(); i++) {
+	for (int i = 0; i < squares.size(); i++) {
 		// draw contour
 		cv::drawContours(image, squares, i, cv::Scalar(255, 0, 0), 1, 8, std::vector<cv::Vec4i>(), 0, cv::Point());
 
@@ -99,13 +102,14 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 		}
 		else
 		{
+			temp = corners[i].x;
 			if (counter >= 5) {
-				temp = corners[i].x;
 				xcoord.push_back(accumlator / counter);
 				accumlator = 0;
 				counter = 0;
 			}
 		}
+		cout << corners[i].x << endl;
 	}
 	if (counter >= 5) {
 		xcoord.push_back(accumlator / counter);
@@ -131,15 +135,31 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 				counter = 0;
 			}
 		}
+		
 	}
 	if (counter >= 3) {
 		ycoord.push_back(accumlator / counter);
 	}
 
-	for (int i = 1; i < xcoord.size(); i++)
+	vector<float> ydist;
+	vector<float> xdist;
+	for (int i = 1; i < xcoord.size(); i++) {
 		minLength.x = minLength.x < xcoord[i] - xcoord[i - 1] ? minLength.x : xcoord[i] - xcoord[i - 1];
-	for (int i = 1; i < ycoord.size(); i++)
+		xdist.push_back(xcoord[i] - xcoord[i - 1]);
+		cout << xcoord[i] << endl;
+	}
+	for (int i = 1; i < ycoord.size(); i++) {
 		minLength.y = minLength.y < ycoord[i] - ycoord[i - 1] ? minLength.y : ycoord[i] - ycoord[i - 1];
+		cout << ycoord[i] << endl;
+		ydist.push_back(ycoord[i] - ycoord[i - 1]);
+	}
+	/*sort(xcoord.begin(), xcoord.end());
+	minLength.x = xcoord[2];*/
+	sort(xdist.begin(), xdist.end());
+	minLength.x = xdist[2];
+	sort(ydist.begin(), ydist.end());
+	minLength.y = ydist[2];
+		
 	//minLength.x -= 10;
 	//minLength.y -= 10;
 
@@ -155,10 +175,10 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 
 int main(int argc, char* argv[])
 {
-	
+
 	string filenmae(argv[1]);
-	//Mat img = imread(filenmae, CV_LOAD_IMAGE_GRAYSCALE);
-	Mat img = imread("F:\\PLM\\GITHUB\\SignGraphSpilt\\x64\\Debug\\img6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	Mat img = imread(filenmae, CV_LOAD_IMAGE_GRAYSCALE);
+	//Mat img = imread("F:\\PLM\\PLMUT\\Debug\\MDS00001.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 	if (img.empty())
 	{
 		cout << "error";
@@ -166,7 +186,7 @@ int main(int argc, char* argv[])
 	}
 	cv::resize(img, img, Size(1248, 1728), 0, 0);
 
-	
+
 	cv::Size size(3, 3);
 	//cv::GaussianBlur(img,img,size,0);  
 	adaptiveThreshold(img, img, 255, CV_ADAPTIVE_THRESH_MEAN_C, CV_THRESH_BINARY, 75, 20);
@@ -192,7 +212,7 @@ int main(int argc, char* argv[])
 
 
 	int* poly = new int[lines.size()];
-	for (int i = 0; i<lines.size(); i++)poly[i] = -1;
+	for (int i = 0; i < lines.size(); i++)poly[i] = -1;
 	int curPoly = 0;
 	vector<vector<cv::Point2f> > corners;
 	for (int i = 0; i < lines.size(); i++)
@@ -201,7 +221,7 @@ int main(int argc, char* argv[])
 		{
 
 			cv::Point2f pt = computeIntersect(lines[i], lines[j]);
-			if (pt.x >= 0 && pt.y >= 0 && pt.x<img.size().width&&pt.y<img.size().height) {
+			if (pt.x >= 0 && pt.y >= 0 && pt.x < img.size().width&&pt.y < img.size().height) {
 
 				if (poly[i] == -1 && poly[j] == -1) {
 					vector<Point2f> v;
@@ -273,7 +293,7 @@ int main(int argc, char* argv[])
 						continue;
 					}
 
-					for (int k = 0; k<corners[poly[j]].size(); k++) {
+					for (int k = 0; k < corners[poly[j]].size(); k++) {
 						corners[poly[i]].push_back(corners[poly[j]][k]);
 					}
 
@@ -285,10 +305,10 @@ int main(int argc, char* argv[])
 		}
 	}
 	vector<float> distance;
-	for (int i = 0; i<corners.size(); i++) {
+	for (int i = 0; i < corners.size(); i++) {
 		cv::Point2f center(0, 0);
-		if (corners[i].size()<4)continue;
-		for (int j = 0; j<corners[i].size(); j++) {
+		if (corners[i].size() < 4)continue;
+		for (int j = 0; j < corners[i].size(); j++) {
 			center += corners[i][j];
 			distance.push_back(sqrt(corners[i][j].x * corners[i][j].x + corners[i][j].y * corners[i][j].y));
 			cv::circle(img, corners[i][j], 8, cv::Scalar(0, 255, 0), 1, 8); // blue
@@ -297,7 +317,7 @@ int main(int argc, char* argv[])
 		}
 		//    sortCorners(corners[i], center);  
 	}
-	//imshow("xxµÄö¦ÕÕ",img);
+	//imshow("xxµÄö¦ÕÕ", img);
 	sort(distance.begin(), distance.end());
 	for (int i = 0; i < distance.size(); i++)
 	{
@@ -305,17 +325,21 @@ int main(int argc, char* argv[])
 	}
 
 	int count = 0;
-	for (int i = 0; i<corners.size(); i++) {
+	sort(corners.begin(), corners.end(), comparator2);
+	for (int i = 0; i < 1; i++) {
 
-		if (corners[i].size()<14)continue;
+		if (corners[i].size() < 14)continue;
+		size_t tsize = corners[i].size();
+
 		cv::Point2f minLength;
+		
 		if (argc > 2) {
 			minLength.x = atoi(argv[2]);
 			minLength.y = atoi(argv[3]);
 		}
-		else {
+		//else {
 			minLength = GenerateIndexedRectangles(corners[i], 10);
-		}
+		//}
 		for (int j = 0; j < corners[i].size(); j++) {
 			count++;
 			vector<cv::Point2f> tcorners;
@@ -329,9 +353,9 @@ int main(int argc, char* argv[])
 			Rect r = boundingRect(tcorners);
 			//Rect r(corners[i][j].x, corners[i][j].y, minLength.x, minLength.y);
 			cout << r.area() << endl;
-			if (r.area()<5000)continue;
+			if (r.area() < 5000)continue;
 			int ares = r.area();
-			if (r.area() > 10000000) continue;
+			//if (r.area() > 10000000) continue;
 
 			// Define the destination image  
 			cv::Mat quad = cv::Mat::zeros(r.height, r.width, CV_8UC3);
