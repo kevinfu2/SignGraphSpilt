@@ -135,7 +135,7 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 				counter = 0;
 			}
 		}
-		
+
 	}
 	if (counter >= 3) {
 		ycoord.push_back(accumlator / counter);
@@ -145,7 +145,8 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 	vector<float> xdist;
 	for (int i = 1; i < xcoord.size(); i++) {
 		minLength.x = minLength.x < xcoord[i] - xcoord[i - 1] ? minLength.x : xcoord[i] - xcoord[i - 1];
-		xdist.push_back(xcoord[i] - xcoord[i - 1]);
+		if (xcoord[i] - xcoord[i - 1] > 100)
+			xdist.push_back(xcoord[i] - xcoord[i - 1]);
 		cout << xcoord[i] << endl;
 	}
 	for (int i = 1; i < ycoord.size(); i++) {
@@ -155,11 +156,15 @@ cv::Point2f GenerateIndexedRectangles(std::vector<cv::Point2f> corners, int bias
 	}
 	/*sort(xcoord.begin(), xcoord.end());
 	minLength.x = xcoord[2];*/
+	cout << xdist.size() << endl;
 	sort(xdist.begin(), xdist.end());
-	minLength.x = xdist[2];
+	if (xdist.size() > 2)
+		minLength.x = xdist[2];
+	cout << ydist.size() << endl;
 	sort(ydist.begin(), ydist.end());
-	minLength.y = ydist[2];
-		
+	if (ydist.size() > 2)
+		minLength.y = ydist[2];
+
 	//minLength.x -= 10;
 	//minLength.y -= 10;
 
@@ -178,7 +183,7 @@ int main(int argc, char* argv[])
 
 	string filenmae(argv[1]);
 	Mat img = imread(filenmae, CV_LOAD_IMAGE_GRAYSCALE);
-	//Mat img = imread("F:\\PLM\\PLMUT\\Debug\\MDS00001.jpg", CV_LOAD_IMAGE_GRAYSCALE);
+	//Mat img = imread("F:\\PLM\\PLMUT\\Debug\\img6.jpg", CV_LOAD_IMAGE_GRAYSCALE);
 	if (img.empty())
 	{
 		cout << "error";
@@ -332,13 +337,13 @@ int main(int argc, char* argv[])
 		size_t tsize = corners[i].size();
 
 		cv::Point2f minLength;
-		
+
 		if (argc > 2) {
 			minLength.x = atoi(argv[2]);
 			minLength.y = atoi(argv[3]);
 		}
 		//else {
-			minLength = GenerateIndexedRectangles(corners[i], 10);
+		minLength = GenerateIndexedRectangles(corners[i], 10);
 		//}
 		for (int j = 0; j < corners[i].size(); j++) {
 			count++;
